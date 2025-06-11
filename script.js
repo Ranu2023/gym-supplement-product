@@ -234,3 +234,292 @@ document.addEventListener('DOMContentLoaded', function() {
   updateCountdown();
   timer = setInterval(updateCountdown, 1000);
 });
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Table of Contents functionality
+  const tocLinks = document.querySelectorAll('.toc-link');
+  const sections = document.querySelectorAll('.privacy-section');
+  
+  // Smooth scrolling for TOC links
+  tocLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      const targetId = this.getAttribute('href');
+      const targetSection = document.querySelector(targetId);
+      
+      if (targetSection) {
+        // Remove active class from all links
+        tocLinks.forEach(l => l.classList.remove('active'));
+        // Add active class to clicked link
+        this.classList.add('active');
+        
+        // Smooth scroll to section
+        window.scrollTo({
+          top: targetSection.offsetTop - 120,
+          behavior: 'smooth'
+        });
+      }
+    });
+  });
+  
+  // Highlight current section in TOC while scrolling
+  function updateActiveSection() {
+    let currentSection = '';
+    
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop - 150;
+      const sectionHeight = section.offsetHeight;
+      
+      if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+        currentSection = '#' + section.id;
+      }
+    });
+    
+    // Update active TOC link
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === currentSection) {
+        link.classList.add('active');
+      }
+    });
+  }
+  
+  // Throttled scroll event listener
+  let ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        updateActiveSection();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+  
+  window.addEventListener('scroll', onScroll);
+  
+  // Initialize active section on page load
+  updateActiveSection();
+  
+  // Animate cards on scroll
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, observerOptions);
+  
+  // Observe all cards and sections
+  const animatedElements = document.querySelectorAll('.usage-card, .info-card, .rights-card, .sharing-item, .privacy-section');
+  
+  animatedElements.forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+  });
+  
+  // Copy email functionality
+  const emailElements = document.querySelectorAll('.contact-item span');
+  
+  emailElements.forEach(element => {
+    if (element.textContent.includes('@')) {
+      element.style.cursor = 'pointer';
+      element.title = 'Click to copy email';
+      
+      element.addEventListener('click', function() {
+        const email = this.textContent;
+        
+        // Copy to clipboard
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(email).then(() => {
+            showCopyNotification('Email copied to clipboard!');
+          });
+        } else {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = email;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showCopyNotification('Email copied to clipboard!');
+        }
+      });
+    }
+  });
+  
+  // Show copy notification
+  function showCopyNotification(message) {
+    // Remove existing notification
+    const existingNotification = document.querySelector('.copy-notification');
+    if (existingNotification) {
+      existingNotification.remove();
+    }
+    
+    // Create notification
+    const notification = document.createElement('div');
+    notification.className = 'copy-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--gradient-primary);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+      notification.style.opacity = '1';
+      notification.style.transform = 'translateY(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateY(-20px)';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
+  }
+  
+  // Print functionality
+  function addPrintButton() {
+    const printButton = document.createElement('button');
+    printButton.innerHTML = '<i class="fas fa-print"></i> Print Policy';
+    printButton.className = 'btn btn-outline';
+    printButton.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+      display: none;
+    `;
+    
+    printButton.addEventListener('click', () => {
+      window.print();
+    });
+    
+    document.body.appendChild(printButton);
+    
+    // Show print button on scroll
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 500) {
+        printButton.style.display = 'block';
+      } else {
+        printButton.style.display = 'none';
+      }
+    });
+  }
+  
+  addPrintButton();
+  
+  // Back to top functionality
+  function addBackToTopButton() {
+    const backToTopButton = document.createElement('button');
+    backToTopButton.innerHTML = '<i class="fas fa-arrow-up"></i>';
+    backToTopButton.className = 'back-to-top';
+    backToTopButton.style.cssText = `
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: var(--gradient-primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 100;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    `;
+    
+    backToTopButton.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+    
+    document.body.appendChild(backToTopButton);
+    
+    // Show/hide back to top button
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        backToTopButton.style.opacity = '1';
+        backToTopButton.style.transform = 'scale(1)';
+      } else {
+        backToTopButton.style.opacity = '0';
+        backToTopButton.style.transform = 'scale(0)';
+      }
+    });
+  }
+  
+  addBackToTopButton();
+});
+
+// Print styles
+const printStyles = `
+  @media print {
+    .header, .footer, .privacy-toc, .back-to-top {
+      display: none !important;
+    }
+    
+    .privacy-wrapper {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .privacy-main {
+      box-shadow: none !important;
+      border: none !important;
+    }
+    
+    .privacy-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    
+    .privacy-main {
+      background: white !important;
+      color: black !important;
+    }
+  }
+`;
+
+// Add print styles to document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = printStyles;
+document.head.appendChild(styleSheet);
